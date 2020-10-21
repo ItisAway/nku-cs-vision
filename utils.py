@@ -69,3 +69,6 @@ def _imshow(img, r = 0, c = 0, i = 0, title = None):
     plt.axis('off')
     if title!=None:
         plt.title(title)
+        
+def t2n(t):
+    return t.detach().cpu().numpy()

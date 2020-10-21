@@ -63,6 +63,7 @@ class LeNetC2(nn.Module):
 class LeNetC2wel(nn.Module):
     def __init__(self, model):
         super(LeNetC2wel, self).__init__()
+        self.c2 = model
         lenet = nn.Sequential(*list(model.children())[:])
         self.conv1 = lenet[0]
         self.relu1 = lenet[1]
@@ -113,6 +114,7 @@ class LeNetC3(nn.Module):
 class LeNetC3wel(nn.Module):
     def __init__(self, model):
         super(LeNetC3wel, self).__init__()
+        self.c3 = model
         lenet = nn.Sequential(*list(model.children())[:])
         self.conv1 = lenet[0]
         self.relu1 = lenet[1]
@@ -182,6 +184,7 @@ def c3_antilayer_init(m):
 class LeNetC9wel(nn.Module):
     def __init__(self, model):
         super(LeNetC9wel, self).__init__()
+        self.c9 = model
         lenet = nn.Sequential(*list(model.children())[:])
         self.conv1 = lenet[0]
         self.relu1 = lenet[1]
