@@ -30,6 +30,7 @@ binarize = Binarize.apply
 class BinaryLeNetCn(nn.Module):
     def __init__(self, cn):
         super(BinaryLeNetCn, self).__init__()
+        self.on_training = True
         self.relu0 = nn.ReLU(inplace=True)
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1, stride=1)
         self.relu1 = nn.ReLU(inplace=True)
@@ -63,7 +64,12 @@ class BinaryLeNetCn(nn.Module):
         out = out.view(out.size(0), -1)
         out = self.relu3(self.linear1(out))
         out = self.linear2(out)
-        return out
+        if self.on_training == True:
+            return out
+        if self.on_training == False:
+            out = self.softmax(out)
+            out = self.c2c_layer(out)
+            return out
     
     def combine(self, x):
         out = self.softmax(x)
@@ -71,5 +77,10 @@ class BinaryLeNetCn(nn.Module):
         return out
     
     def inference(self, x):
-        out = self.forward(x)
+        out = binarize(x)
+        out = self.maxpool1(self.relu1(self.conv1(out)))
+        out = self.maxpool2(self.relu2(self.conv2(out)))
+        out = out.view(out.size(0), -1)
+        out = self.relu3(self.linear1(out))
+        out = self.linear2(out)
         return self.combine(out)
