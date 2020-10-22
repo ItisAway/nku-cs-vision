@@ -15,21 +15,6 @@ def pred_from_logits_train(logits, c_to_c = None):
                 conf[i, j] = softmax[i, c_to_c[j, :]].sum()
         return conf.argmax(axis=-1)
 
-def data_expand(data, c_to_c):
-    images, labels = data
-    
-    b, c, w, h = images.shape
-    e_n = len(c_to_c[0])
-    cc_images = torch.zeros([b*e_n, c, w, h], dtype=images.dtype)
-    cc_labels = torch.zeros(b*e_n, dtype=labels.dtype)
-    ii = 0
-    for img, lbl in zip(images, labels):
-        cc_images[ii*e_n:ii*e_n + e_n :, :, :] = img.expand(e_n, c, w, h)
-        cc_labels[ii*e_n:ii*e_n + e_n] = torch.tensor(c_to_c[lbl],dtype=labels.dtype)
-        ii += 1
-    return cc_images, cc_labels
-
-
 def draw_result(res_dict, lp, title):
     if lp == 'l2':
         eps_max = 4.
