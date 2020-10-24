@@ -234,7 +234,7 @@ def get_models():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # model LeNet5
     LeNet = LeNet5()
-    LeNet.load_state_dict(torch.load('./zoo/net_120.pth'))
+    LeNet.load_state_dict(torch.load('./zoo/lenet.pth'))
     LeNet.to(device)
     LeNet.eval()
     # model c_10_2
@@ -257,6 +257,7 @@ def get_models():
     c9 = LeNetC9wel(n)
     c9.apply(c9_antilayer_init)
     c9.to(device)
+    c9.eval()
     return LeNet, net_c2_wel, net_c3_wel, c9
 
 
