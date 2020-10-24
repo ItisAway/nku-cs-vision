@@ -46,7 +46,7 @@ fixed_epsilon_attack_test(net, l2_bim_, 'l2', 'L2BIM LeNet5')
 fixed_epsilon_attack_test(net, linf_bim_, 'linf', 'LinfBIM LeNet5')
 fixed_epsilon_attack_test(net, fgsm_, 'linf', 'FGSM LeNet5')
 '''
-
+'''
 fgm_res = {}
 fgm_res['c2'] = np.load('./res/FGM c2.npy')
 fgm_res['c3'] = np.load('./res/FGM c3.npy')
@@ -71,6 +71,7 @@ draw_result(fgm_res, 'l2', 'FGM')
 draw_result(l2_bim_res, 'l2', 'L2 BIM')
 draw_result(linf_bim_res, 'linf', 'Linf BIM')
 draw_result(fgsm_res, 'linf', 'FGSM')
+'''
 
 
 
