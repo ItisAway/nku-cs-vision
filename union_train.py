@@ -60,7 +60,7 @@ def training(net, paras):
     
     for epoch in range(pre_epoch, EPOCH):
         print('\nEpoch: %d' % (epoch + 1))
-        if epoch <= mode1_epoch:
+        if epoch < mode1_epoch:
             net.training_mode = 1
         else:
             net.training_mode = 2
@@ -79,9 +79,13 @@ def training(net, paras):
             outputs = net(cc_images)
             if net.training_mode == 1:
                 loss = cost(outputs, cc_labels)
-            elif net.training_mode == 3:
-                loss = cost(outputs[0], cc_labels) + cost(outputs[1], true_labels)
-            loss.backward()
+                loss.backward()
+            elif net.training_mode == 2:    
+                loss1 = cost(outputs[0], cc_labels)
+                loss2 = cost(outputs[1], true_labels.expand([expansion_times, BATCH_SIZE]).permute([1,0]).reshape([expansion_times * BATCH_SIZE]))
+                loss1.backward(retain_graph=True)
+                loss2.backward()
+                loss = loss1 + loss2
             optimizer.step()
             
             # 每训练1个batch打印一次loss和准确率
@@ -130,9 +134,9 @@ if __name__ == "__main__":
     paras["batch_size"] = 100
     paras["pre_epoch"] = 0
     paras["epoch"] = 100
-    paras["mode1_epoch"] = 40
+    paras["mode1_epoch"] = 0
     paras["device"] = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    paras["pth_folder"] = 'binary_c2_zoo'
+    paras["pth_folder"] = 'zoo/union_c2_zoo'
     paras["cost"] = torch.nn.CrossEntropyLoss()
     paras["optim"] = "adam"
     paras["lr"] = 1e-3
