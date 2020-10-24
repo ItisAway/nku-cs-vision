@@ -79,13 +79,16 @@ def training(net, paras):
             outputs = net(cc_images)
             if net.training_mode == 1:
                 loss = cost(outputs, cc_labels)
-                loss.backward()
-            elif net.training_mode == 2:    
-                loss1 = cost(outputs[0], cc_labels)
-                loss2 = cost(outputs[1], true_labels.expand([expansion_times, BATCH_SIZE]).permute([1,0]).reshape([expansion_times * BATCH_SIZE]))
-                loss1.backward(retain_graph=True)
-                loss2.backward()
-                loss = loss1 + loss2
+            elif net.training_mode == 2:
+                loss = cost(outputs[0], cc_labels) +\
+                 cost(outputs[1],\
+                  true_labels.\
+                  expand([expansion_times, BATCH_SIZE]).\
+                  permute([1,0]).\
+                  reshape([expansion_times * BATCH_SIZE])\
+                  )
+
+            loss.backward()
             optimizer.step()
             
             # 每训练1个batch打印一次loss和准确率
