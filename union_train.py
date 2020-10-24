@@ -64,6 +64,14 @@ def training(net, paras):
             net.training_mode = 1
         else:
             net.training_mode = 2
+            net.conv1.weight.requires_grad = False
+            net.conv1.bias.requires_grad = False
+            net.conv2.weight.requires_grad = False
+            net.conv2.bias.requires_grad = False
+            if paras["optim"] == "adam":
+                optimizer = torch.optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr = lr)
+            if paras["optim"] == "adagrad":
+                optimizer = torch.optim.Adagrad(filter(lambda p: p.requires_grad, net.parameters()), lr = lr)
         net.train()
         sum_loss = 0.0
         correct = 0.0
@@ -80,6 +88,10 @@ def training(net, paras):
             if net.training_mode == 1:
                 loss = cost(outputs, cc_labels)
             elif net.training_mode == 2:
+                assert net.conv1.weight.requires_grad == False
+                assert net.conv1.bias.requires_grad == False
+                assert net.conv2.weight.requires_grad == False
+                assert net.conv2.bias.requires_grad == False
                 loss = cost(outputs[0], cc_labels) +\
                  cost(outputs[1],\
                   true_labels.\
