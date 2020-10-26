@@ -7,7 +7,9 @@ import foolbox
 import torch
 import torchvision
 from torch.utils.data import DataLoader
-from matplotlib import pyplot as plt
+from utils import l2, linf, l0
+from attack_utils import get_fixed_eps_attacks, get_min_attacks
+
 # test data
 test_data = torchvision.datasets.MNIST(
     './mnist', train=False, download=False, transform=torchvision.transforms.ToTensor()
@@ -15,7 +17,7 @@ test_data = torchvision.datasets.MNIST(
     
 # return test_loader
 def get_test_loader(batch_size, test_data=test_data):
-    test_loader = DataLoader(dataset = test_data, batch_size = batch_size, shuffle = True)
+    test_loader = DataLoader(dataset = test_data, batch_size = batch_size, shuffle = False)
     return test_loader
 
 def timing(start):
@@ -40,62 +42,93 @@ def plain_test(test_loader, net):
     acc = 100. * correct / total
     print('%20s acc：%.3f%%' % ('plain', acc), timing(start))
 
-def fixed_epsilon_attack_test(model, attack, lp, title):
+def fixed_eps_attack_test(model, attack, lp, title):
     start = time.time()
     fmodel = foolbox.PyTorchModel(model, bounds=(0, 1))
-    if lp == 'l2':
-        eps_min = 0.
-        eps_max = 4.
-        thres = 1.5
-    if lp == 'linf':
-        eps_min = 0.
-        eps_max = 0.5
-        thres = 0.3
     loader = get_test_loader(1)
     device = torch.device("cuda")
     eps_res = np.ones(10000)
     idx = 0
     for img, lbl in loader:
         img, lbl = img.to(device), lbl.to(device)
-        e_min, e_max = eps_min, eps_max
-        adv_min, _, suc_min = attack(fmodel, img, lbl, epsilons=e_min)
-        adv_max, _, suc_max = attack(fmodel, img, lbl, epsilons=e_max)
-        if suc_max == False:
-            eps_res[idx] = eps_max + 0.5
+        # set eps = 0 while predict incorrectly
+        pred = model(img).argmax(axis=-1)
+        if pred != lbl:
+            eps_res[idx] = 0
             idx += 1
             continue
-        else:
-            bs_i = 0
-            while(bs_i <= 10):
-                eps_ = (e_min+e_max)/2
-                _, _, is_ = attack(fmodel, img, lbl, epsilons=eps_)
-                if is_ == True:
-                    e_max = eps_
-                else:
-                    e_min = eps_
-                bs_i += 1
-            eps_res[idx] = e_max
+        # compute eps_max
+        anti_bi = torch.zeros_like(img)
+        anti_bi[img < 0.5] = 1
+        if lp == 'l2':
+            eps_max = l2(img, anti_bi)
+        if lp == 'linf':
+            eps_max = linf(img, anti_bi)
+        # check whether attack_method can success under eps_max
+        adv_max, _, suc_max = attack(fmodel, img, lbl, epsilons=eps_max)
+        if suc_max == False:
+            eps_res[idx] = 2.0 if lp == 'linf' else 28*28+1.0
             idx += 1
-    # show result
-    stepsize = 0.004
-    if lp == 'linf':
-        stepsize /= 8
-    e_ = np.array(range(1,1001))*stepsize
-    acc = np.zeros(1000)
-    mid_ = 0
-    for i in range(1000):
-        acc[i] = 1 - (eps_res <= e_[i]).sum()/10000
-        if mid_ == 0 and acc[i] <= 0.5:
-            mid_ = e_[i]
-    plt.figure()
-    plt.plot(e_, acc)
-    plt.xlabel(lp + 'distance')
-    plt.ylabel('Accuracy')
-    thres_acc = 1 - (eps_res <= thres).sum()/10000
-    plt.title('%s    %.2f/%.0f%%    %s'%(title, mid_, thres_acc*100, timing(start)))
-    plt.xlim((0, eps_max))
-    plt.ylim((0, 1))        
-    plt.savefig('./res/%s.svg'%title)
-    plt.show()
-    np.save('./res/%s.npy'%title, eps_res)
+            continue
+        # binary search
+        e_min, e_max = 0, eps_max
+        min_section = 0.00025 if lp == 'linf' else 0.002
+        while (e_max - e_min) > min_section:
+            eps_ = (e_min+e_max)/2
+            _, _, is_ = attack(fmodel, img, lbl, epsilons=eps_)
+            if is_ == True:
+                e_max = eps_
+            else:
+                e_min = eps_
+        eps_res[idx] = e_max
+        idx += 1
+
+    np.save('./res/npy/%s.npy'%title, eps_res)
+    print(title + timing(start))
     return eps_res
+
+def minim_attack_test(model, attack, lp, title, batch_size = 100):
+    start = time.time()
+    fmodel = foolbox.PyTorchModel(model, bounds=(0, 1))
+    loader = get_test_loader(batch_size)
+    eps_res = np.ones(10000)
+    idx = 0
+    if lp == 'l2':
+        distance = l2
+    elif lp == 'linf':
+        distance = linf
+    else:
+        distance = l0
+    for b, l in loader:
+        b, l = b.cuda(), l.cuda()
+        _, a, iss = attack(fmodel, b, l, epsilons=None)
+        for b_, a_, iss_ in zip(b, a, iss):
+            if iss_ == False:
+                # eps_oo of l0, l2 is same
+                eps_res[idx] = 2.0 if lp == 'linf' else 28*28+1.0
+                idx += 1
+            else:
+                eps_res[idx] = distance(b_, a_)
+                idx += 1
+
+    print(title + timing(start))
+    np.save('./res/npy/%s.npy'%title, eps_res)
+    return eps_res
+    
+def adversarial_testing(model, loss, model_name, batch_size = 100):
+    l2_fea, linf_fea = get_fixed_eps_attacks(loss = loss)
+    l2_ma, linf_ma, l0_ma = get_min_attacks(loss = loss)
+    '''
+    for name, atk in l2_fea.items():
+        fixed_eps_attack_test(model, atk, 'l2', name + model_name)
+    for name, atk in linf_fea.items():
+        fixed_eps_attack_test(model, atk, 'linf', name + model_name)
+    '''
+    for name, atk in l2_ma.items():
+        minim_attack_test(model, atk, 'l2', name + model_name, batch_size)
+    for name, atk in linf_ma.items():
+        minim_attack_test(model, atk, 'linf', name + model_name, batch_size)
+    for name, atk in l0_ma.items():
+        minim_attack_test(model, atk, 'l0', name + model_name, batch_size)
+    
+    
