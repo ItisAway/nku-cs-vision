@@ -57,3 +57,12 @@ def _imshow(img, r = 0, c = 0, i = 0, title = None):
         
 def t2n(t):
     return t.detach().cpu().numpy()
+
+def l2(a, b):
+    return ((a - b)**2).sum().item()
+
+def linf(a, b):
+    return (a - b).max().item()
+
+def l0(a, b):
+    return (a != b).sum().item()*1.0
