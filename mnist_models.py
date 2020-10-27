@@ -6,207 +6,25 @@ Created on Sun Oct 11 11:06:05 2020
 """
 # -----------------------------------------------------------------------------
 # ----------------------------- DEFINE ALL MODELS -----------------------------
-# ----------------------- LeNet, C_10_2, C_10_3, C_10_9 -----------------------
+# -------------------- pure / binary LeNet, C_10_2, C_10_9 --------------------
 # -----------------------------------------------------------------------------
 import torch
 import torch.nn as nn
 import os
 import itertools
-
-# LeNet5 COMBINATION CLASS
-class LeNet5(nn.Module):
-    def __init__(self):
-        super(LeNet5, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1, stride=1)
-        self.relu1 = nn.ReLU(inplace=True)
-        self.maxpool1 = nn.MaxPool2d(2)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1, stride=1)
-        self.relu2 = nn.ReLU(inplace=True)
-        self.maxpool2 = nn.MaxPool2d(2)
-        self.linear1 = nn.Linear(7 * 7 * 64, 200)
-        self.relu3 = nn.ReLU(inplace=True)
-        self.linear2 = nn.Linear(200, 10)
-
-    def forward(self, x):
-        out = self.maxpool1(self.relu1(self.conv1(x)))
-        out = self.maxpool2(self.relu2(self.conv2(out)))
-        out = out.view(out.size(0), -1)
-        out = self.relu3(self.linear1(out))
-        out = self.linear2(out)
-        return out
+from scipy.special import comb
 
 
-# LeNet C_10_2
-class LeNetC2(nn.Module):
-    def __init__(self):
-        super(LeNetC2, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1, stride=1)
-        self.relu1 = nn.ReLU(inplace=True)
-        self.maxpool1 = nn.MaxPool2d(2)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1, stride=1)
-        self.relu2 = nn.ReLU(inplace=True)
-        self.maxpool2 = nn.MaxPool2d(2)
-        self.linear1 = nn.Linear(7 * 7 * 64, 200)
-        self.relu3 = nn.ReLU(inplace=True)
-        self.linear2 = nn.Linear(200, 45)
-
-    def forward(self, x):
-        out = self.maxpool1(self.relu1(self.conv1(x)))
-        out = self.maxpool2(self.relu2(self.conv2(out)))
-        out = out.view(out.size(0), -1)
-        out = self.relu3(self.linear1(out))
-        out = self.linear2(out)
-        return out
-
-
-# LeNet C_10_2 with the extra layer
-class LeNetC2wel(nn.Module):
-    def __init__(self, model):
-        super(LeNetC2wel, self).__init__()
-        self.c2 = model
-        lenet = nn.Sequential(*list(model.children())[:])
-        self.conv1 = lenet[0]
-        self.relu1 = lenet[1]
-        self.maxpool1 = lenet[2]
-        self.conv2 = lenet[3]
-        self.relu2 = lenet[4]
-        self.maxpool2 = lenet[5]
-        self.linear1 = lenet[6]
-        self.relu3 = lenet[7]
-        self.linear2 = lenet[8]
-        self.softmax = nn.Softmax(1)
-        self.antilayer = nn.Linear(45, 10)
-    def forward(self, x):
-        out = self.maxpool1(self.relu1(self.conv1(x)))
-        out = self.maxpool2(self.relu2(self.conv2(out)))
-        out = out.view(out.size(0), -1)
-        out = self.relu3(self.linear1(out))
-        out = self.linear2(out)
-        # out = out.view(out.size(0), -1)
-        out = self.softmax(out)
-        out = self.antilayer(out)
-        return out
-
-
-# LeNet C_10_3
-class LeNetC3(nn.Module):
-    def __init__(self):
-        super(LeNetC3, self).__init__()
-        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1, stride=1)
-        self.relu1 = nn.ReLU(inplace=True)
-        self.maxpool1 = nn.MaxPool2d(2)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1, stride=1)
-        self.relu2 = nn.ReLU(inplace=True)
-        self.maxpool2 = nn.MaxPool2d(2)
-        self.linear1 = nn.Linear(7 * 7 * 64, 200)
-        self.relu3 = nn.ReLU(inplace=True)
-        self.linear2 = nn.Linear(200, 120)
-    def forward(self, x):
-        out = self.maxpool1(self.relu1(self.conv1(x)))
-        out = self.maxpool2(self.relu2(self.conv2(out)))
-        out = out.view(out.size(0), -1)
-        out = self.relu3(self.linear1(out))
-        out = self.linear2(out)
-        return out
-
-
-# LeNet C_10_3 with the extra layer
-class LeNetC3wel(nn.Module):
-    def __init__(self, model):
-        super(LeNetC3wel, self).__init__()
-        self.c3 = model
-        lenet = nn.Sequential(*list(model.children())[:])
-        self.conv1 = lenet[0]
-        self.relu1 = lenet[1]
-        self.maxpool1 = lenet[2]
-        self.conv2 = lenet[3]
-        self.relu2 = lenet[4]
-        self.maxpool2 = lenet[5]
-        self.linear1 = lenet[6]
-        self.relu3 = lenet[7]
-        self.linear2 = lenet[8]
-        self.softmax = nn.Softmax(1)
-        self.antilayer = nn.Linear(120, 10)
-    def forward(self, x):
-        out = self.maxpool1(self.relu1(self.conv1(x)))
-        out = self.maxpool2(self.relu2(self.conv2(out)))
-        out = out.view(out.size(0), -1)
-        out = self.relu3(self.linear1(out))
-        out = self.linear2(out)
-        # out = out.view(out.size(0), -1)
-        out = self.softmax(out)
-        out = self.antilayer(out)
-        return out
-
-
-# Combination every three classes
-def get_c_to_c3():
-    c_10_3 = itertools.combinations(range(10), 3)
+def get_c2c(cn):
+    c2c = itertools.combinations(range(10), cn)
     res = []
     for i in range(10):
         res.append([])
-    for i, p in zip(range(120), c_10_3):
-        for ii in range(3):
+    for i, p in zip(range(int(comb(10, cn))), c2c):
+        for ii in range(cn):
             res[p[ii]].append(i)
     return res
 
-# Combination every two classes
-def get_c_to_c2():
-    cc_m = torch.zeros([10,10], dtype=torch.int64)
-    ii = 0
-    for i in range(10):
-        for j in range(i+1, 10):
-            cc_m[i, j] = ii
-            ii = ii + 1
-    cc = torch.zeros([10,9], dtype=torch.int64)
-    for i in range(10):
-        cc[i, :] = torch.cat((cc_m[0:i, i], cc_m[i, i+1:10]), 0)
-    return cc
-
-def c2_antilayer_init(m):
-    if isinstance(m, nn.Linear):
-        if m.bias.data.shape[0] == 10:
-            c_to_c = get_c_to_c2()
-            m.bias.data *= 0
-            m.weight.data *= 0
-            for i in range(10):
-                m.weight.data[i, c_to_c[i]] = 1.0/2   
-
-def c3_antilayer_init(m):
-    if isinstance(m, nn.Linear):
-        if m.bias.data.shape[0] == 10:
-            c_to_c = get_c_to_c3()
-            m.bias.data *= 0
-            m.weight.data *= 0
-            for i in range(10):
-                m.weight.data[i, c_to_c[i]] = 1.0/3   
-                
-class LeNetC9wel(nn.Module):
-    def __init__(self, model):
-        super(LeNetC9wel, self).__init__()
-        self.c9 = model
-        lenet = nn.Sequential(*list(model.children())[:])
-        self.conv1 = lenet[0]
-        self.relu1 = lenet[1]
-        self.maxpool1 = lenet[2]
-        self.conv2 = lenet[3]
-        self.relu2 = lenet[4]
-        self.maxpool2 = lenet[5]
-        self.linear1 = lenet[6]
-        self.relu3 = lenet[7]
-        self.linear2 = lenet[8]
-        self.softmax = nn.Softmax(1)
-        self.antilayer = nn.Linear(10, 10)
-    def forward(self, x):
-        out = self.maxpool1(self.relu1(self.conv1(x)))
-        out = self.maxpool2(self.relu2(self.conv2(out)))
-        out = out.view(out.size(0), -1)
-        out = self.relu3(self.linear1(out))
-        out = self.linear2(out)
-        # out = out.view(out.size(0), -1)
-        out = self.softmax(out)
-        out = self.antilayer(out)
-        return out
 
 def get_c_to_c9():
     res = []
@@ -214,56 +32,103 @@ def get_c_to_c9():
         res.append([])
     for i in range(10):
         for j in range(9):
-            res[i].append((i+j)%10)
+            res[i].append((i+j) % 10)
     return res
 
-def c9_antilayer_init(m):
-    if isinstance(m, nn.Linear):
-        if m.weight.data.shape[0] == 10 and m.weight.data.shape[1] == 10:
-            # print(m.weight.data.shape)
-            # print('find')
-            c_to_c = get_c_to_c9()
-            m.bias.data *= 0
-            m.weight.data *= 0
-            for i in range(10):
-                m.weight.data[i, c_to_c[i]] = 1.0/9
 
-# return lenet lenetc2 lenetc2wel
-def get_models(): 
+class Binarize(torch.autograd.Function):
+    @staticmethod
+    def forward(ctx, input):
+        return (torch.sign(input - 0.5) + 1)*1/2
+
+    @staticmethod
+    def backward(ctx, grad_outputs):
+        return grad_outputs
+
+
+binarize = Binarize.apply
+
+
+class LeNetCn(nn.Module):
+    def __init__(self, cn, is_binary=False):
+        super(LeNetCn, self).__init__()
+        self.cn = cn
+        self.is_binary = is_binary
+        self.on_training = False
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1, stride=1)
+        self.relu1 = nn.ReLU(inplace=True)
+        self.maxpool1 = nn.MaxPool2d(2)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1, stride=1)
+        self.relu2 = nn.ReLU(inplace=True)
+        self.maxpool2 = nn.MaxPool2d(2)
+        self.linear1 = nn.Linear(7 * 7 * 64, 200)
+        self.relu3 = nn.ReLU(inplace=True)
+        self.linear2 = nn.Linear(200, int(comb(10, self.cn)))
+        if self.cn != 1:
+            self.softmax = nn.Softmax(1)
+            self.c2c_layer = nn.Linear(int(comb(10, self.cn)), 10)
+            c2c = get_c2c(self.cn) if self.cn != 9 else get_c_to_c9()
+            self.c2c_layer.weight.data *= 0
+            self.c2c_layer.bias.data *= 0
+            for i in range(10):
+                self.c2c_layer.weight.data[i, c2c[i]] = 1.0/self.cn
+
+    def forward(self, x):
+        if self.is_binary == True:
+            x = binarize(x)
+        out = self.maxpool1(self.relu1(self.conv1(x)))
+        out = self.maxpool2(self.relu2(self.conv2(out)))
+        out = out.view(out.size(0), -1)
+        out = self.relu3(self.linear1(out))
+        out = self.linear2(out)
+        if self.cn != 1 and self.on_training == False:
+            out = self.softmax(out)
+            out = self.c2c_layer(out)
+        return out
+
+    def combine(self, x):
+        if self.cn == 1:
+            return x
+        out = self.softmax(x)
+        out = self.c2c_layer(out)
+        return out
+
+
+def get_model(model_num, is_binary=False):
     # GPU
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     # model LeNet5
-    LeNet = LeNet5()
-    LeNet.load_state_dict(torch.load('./zoo/lenet.pth'))
-    LeNet.to(device)
-    LeNet.eval()
-    # model c_10_2
-    net_c2 = LeNetC2()
-    net_c2.load_state_dict(torch.load('./zoo/lenet_c_10_2.pth'))
-    net_c2_wel = LeNetC2wel(net_c2)
-    net_c2_wel.apply(c2_antilayer_init)
-    net_c2_wel.to(device)
-    net_c2_wel.eval()
-    # model c_10_3
-    net_c3 = LeNetC3()
-    net_c3.load_state_dict(torch.load('./zoo/lenet_c_10_3.pth'))
-    net_c3_wel = LeNetC3wel(net_c3)
-    net_c3_wel.apply(c3_antilayer_init)
-    net_c3_wel.to(device)
-    net_c3_wel.eval()
-    # model c_10_9
-    n = LeNet5()
-    n.load_state_dict(torch.load('./zoo/c9_79.pth'))
-    c9 = LeNetC9wel(n)
-    c9.apply(c9_antilayer_init)
-    c9.to(device)
-    c9.eval()
-    return LeNet, net_c2_wel, net_c3_wel, c9
+    net = LeNetCn(model_num, is_binary=is_binary)
+    if model_num == 1 and not is_binary:
+        net.load_state_dict(torch.load('./zoo/lenet.pth'))
+    elif model_num == 1 and is_binary:
+        net.load_state_dict(torch.load('./zoo/bin_lenet_070.pth'))
+    elif model_num == 2 and not is_binary:
+        net.load_state_dict(torch.load('./zoo/new_lenet_c_10_2.pth'))
+    elif model_num == 2 and is_binary:
+        net.load_state_dict(torch.load('./zoo/bic2.pth'))
+    elif model_num == 9 and not is_binary:
+        net.load_state_dict(torch.load('./zoo/new_c9_79.pth'))
+    elif model_num == 9 and is_binary:
+        net.load_state_dict(torch.load('./zoo/bin_c_10_9_net_067.pth'))
+    net.to(device)
+    net.eval()
+    net.on_training = False
+    return net
 
 
 if __name__ == "__main__":
     from test_utils import get_test_loader, plain_test
-    models = get_models()
     loader = get_test_loader(100)
-    for m in models:
-        plain_test(loader, m)
+    cn = [1,2,9]
+    is_b = [True, False]
+    for cn_ in cn:
+        for is_b_ in is_b:
+            print(cn_, 'is binary:', is_b_)
+            net = get_model(cn_, is_binary=is_b_)
+            plain_test(loader, net)
+            print("-" * 50)
+
+    
+    
