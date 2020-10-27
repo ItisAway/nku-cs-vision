@@ -56,9 +56,12 @@ def training(net, paras):
         optimizer = torch.optim.Adam(net.parameters(), lr = lr)
     if paras["optim"] == "adagrad":
         optimizer = torch.optim.Adagrad(net.parameters(), lr = lr)
-    
-    c2c = paras["c2c"]
-    expansion_times = len(c2c[0])
+    if "c2c" in paras:
+        c2c = paras["c2c"]
+        expansion_times = len(c2c[0])
+    else:
+        c2c = None
+        expansion_times = 1
     
     if not os.path.exists(pth_folder):
         os.makedirs(pth_folder)
@@ -78,6 +81,7 @@ def training(net, paras):
     for epoch in range(pre_epoch, EPOCH):
         print('\nEpoch: %d' % (epoch + 1))
         net.train()
+        net.on_training = True
         sum_loss = 0.0
         correct = 0.0
         total = 0.0
@@ -85,15 +89,16 @@ def training(net, paras):
         for i, data in enumerate(train_loader, 0):
             _, true_labels = data
             true_labels = true_labels.to(device)
-            cc_images, cc_labels = data_expand(data, c2c)
-            cc_images, cc_labels = cc_images.to(device), cc_labels.to(device)
-
+            if c2c != None:
+                cc_images, cc_labels = data_expand(data, c2c)
+            else:
+                cc_images, cc_labels = data
+            cc_images, cc_labels = cc_images.to(device), cc_labels.to(device) 
             optimizer.zero_grad()
             outputs = net(cc_images)
             loss = cost(outputs, cc_labels)
             loss.backward()
             optimizer.step()
-            
             # 每训练1个batch打印一次loss和准确率
             sum_loss += loss.item()
             predicted = net.combine(outputs[0:-1:expansion_times, :]).argmax(axis=-1).to(device)
@@ -109,11 +114,12 @@ def training(net, paras):
         with torch.no_grad():
             correct = 0
             total = 0
+            net.eval()
+            net.on_training = False
             for images, labels in test_loader:
-                net.eval()
                 images = images.to(device)
                 labels = labels.to(device)
-                pred = net.inference(images).argmax(axis=-1)
+                pred = net(images).argmax(axis=-1)
                 pred = pred.to(device)
                 total += labels.size(0)
                 correct += pred.eq(labels).cpu().sum()
