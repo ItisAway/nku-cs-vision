@@ -118,12 +118,10 @@ def minim_attack_test(model, attack, lp, title, batch_size = 100):
 def adversarial_testing(model, loss, model_name, batch_size = 100):
     l2_fea, linf_fea = get_fixed_eps_attacks(loss = loss)
     l2_ma, linf_ma, l0_ma = get_min_attacks(loss = loss)
-    '''
     for name, atk in l2_fea.items():
         fixed_eps_attack_test(model, atk, 'l2', name + model_name)
     for name, atk in linf_fea.items():
         fixed_eps_attack_test(model, atk, 'linf', name + model_name)
-    '''
     for name, atk in l2_ma.items():
         minim_attack_test(model, atk, 'l2', name + model_name, batch_size)
     for name, atk in linf_ma.items():
