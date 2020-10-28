@@ -1,5 +1,4 @@
 # nku-cs-vision
-201-319
 
 pakages：
 pip install foolbox
@@ -7,3 +6,5 @@ pip install foolbox
 datasets:
 python __init__.py
 
+draw result:
+create folder res/npy
