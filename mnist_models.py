@@ -101,17 +101,17 @@ def get_model(model_num, is_binary=False):
     # model LeNet5
     net = LeNetCn(model_num, is_binary=is_binary)
     if model_num == 1 and not is_binary:
-        net.load_state_dict(torch.load('./zoo/lenet.pth'))
+        net.load_state_dict(torch.load('./zoo/LeNet5.pth'))
     elif model_num == 1 and is_binary:
-        net.load_state_dict(torch.load('./zoo/bin_lenet_070.pth'))
+        net.load_state_dict(torch.load('./zoo/Binary_LeNet5.pth'))
     elif model_num == 2 and not is_binary:
-        net.load_state_dict(torch.load('./zoo/new_lenet_c_10_2.pth'))
+        net.load_state_dict(torch.load('./zoo/C2.pth'))
     elif model_num == 2 and is_binary:
-        net.load_state_dict(torch.load('./zoo/bic2.pth'))
+        net.load_state_dict(torch.load('./zoo/Binary_C2.pth'))
     elif model_num == 9 and not is_binary:
-        net.load_state_dict(torch.load('./zoo/new_c9_79.pth'))
+        net.load_state_dict(torch.load('./zoo/C9.pth'))
     elif model_num == 9 and is_binary:
-        net.load_state_dict(torch.load('./zoo/bin_c_10_9_net_067.pth'))
+        net.load_state_dict(torch.load('./zoo/Binary_C9.pth'))
     net.to(device)
     net.eval()
     net.on_training = False
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     is_b = [True, False]
     for cn_ in cn:
         for is_b_ in is_b:
-            print(cn_, 'is binary:', is_b_)
+            print('Binary' if is_b_ else '      ', 'C%d:'%cn_, end='')
             net = get_model(cn_, is_binary=is_b_)
             plain_test(loader, net)
             print("-" * 50)

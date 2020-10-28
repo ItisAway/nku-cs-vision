@@ -19,29 +19,30 @@ def draw_result(res_dict, lp, title):
     if lp == 'l2':
         eps_max = 4.
         thres = 1.5
+        eps_inf = 28*28*1.0
     if lp == 'linf':
         eps_max = 0.5
         thres = 0.3
+        eps_inf = 1.0
     # show result
-    stepsize = 0.004
+    stepsize = 0.002
     if lp == 'linf':
         stepsize /= 8
-    e_ = np.array(range(1,1001))*stepsize
+    e_ = np.array(range(1,2001))*stepsize
     
     plt.figure()
-    plt.xlabel(lp + 'distance')
+    plt.xlabel(lp + ' distance')
     plt.ylabel('Accuracy')
     plt.xlim((0, eps_max))
-    plt.ylim((0, 1))  
+    plt.ylim((0, 1))
     for name, eps_res in res_dict.items():
-        acc = np.zeros(1000)
-        mid_ = 0
-        for i in range(1000):
+        acc = np.zeros(2000)
+        mid_ = np.median(eps_res)
+        for i in range(2000):
             acc[i] = 1 - (eps_res <= e_[i]).sum()/10000
-            if mid_ == 0 and acc[i] <= 0.5:
-                mid_ = e_[i]
         thres_acc = 1 - (eps_res <= thres).sum()/10000
-        plt.plot(e_, acc, label='%s  %.2f/%.0f%%'%(name, mid_, thres_acc*100))
+        mid_ = '%.1f'%mid_ if mid_ < eps_inf else '∞'
+        plt.plot(e_, acc, label='%s  %s/%.0f%%'%(name, mid_, thres_acc*100))
     plt.legend()
     plt.title(title)
     plt.savefig('./res/%s.svg'%title)
