@@ -40,7 +40,7 @@ def plain_test(test_loader, net):
         total += labels.size(0)
         correct += pred.eq(labels).cpu().sum()
     acc = 100. * correct / total
-    print('%20s acc：%.3f%%' % ('plain', acc), timing(start))
+    print('%s acc：%.3f%%' % ('plain', acc), timing(start))
 
 def fixed_eps_attack_test(model, attack, lp, title):
     start = time.time()
